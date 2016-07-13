@@ -7,6 +7,7 @@ import lmdb
 ONE_MB = 1 * 1024 * 1024
 ONE_GB = ONE_MB * 1024
 
+
 def run():
     map_size = ONE_MB
     while map_size < ONE_GB:
