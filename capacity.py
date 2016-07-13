@@ -1,7 +1,8 @@
 import shutil
-from math import floor, ceil
+from math import ceil
 
-from _common import ONE_MB, ONE_GB, create_database, put, calculate_stored_size
+from _common import ONE_MB, ONE_GB, create_database, put, EXAMPLE_KEY, \
+    calculate_largest_possible_entry
 
 
 def run():
@@ -26,21 +27,12 @@ def run_with_map_size(map_size):
 def create_and_insert(content, map_size):
     database, database_directory = create_database(map_size)
     try:
-        put(content, database)
+        put(EXAMPLE_KEY, content, database)
         return True
     except:
         return False
     finally:
         shutil.rmtree(database_directory)
-
-
-def calculate_largest_possible_entry(database, map_size):
-    page_size = database.stat()["psize"]
-    max_key_size = database.max_key_size()
-    available_pages = floor(map_size / page_size)
-    available_size = int((available_pages * page_size) - max_key_size - 16)
-    assert calculate_stored_size(database, bytearray(available_size)) == map_size
-    return available_size
 
 
 if __name__ == "__main__":
