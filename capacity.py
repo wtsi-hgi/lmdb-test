@@ -14,8 +14,9 @@ def run():
 
 def run_with_map_size(map_size):
     actual_size = calculate_largest_possible_entry(create_database(map_size)[0], map_size)
-    for i in range(20):
-        content_size = int((i + 1) * 0.05 * actual_size)
+    divisions = 20
+    for i in range(divisions):
+        content_size = int((i + 1) * (1.0 / float(divisions)) * actual_size)
         content = bytearray(content_size)
         success = create_and_insert(content, map_size)
         percentage_capacity = ceil((float(content_size) / float(actual_size)) * 100)

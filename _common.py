@@ -32,9 +32,9 @@ def calculate_stored_size(content, database):
 
 def calculate_largest_possible_entry(database, map_size):
     page_size = database.stat()["psize"]
+    fixed_cost = 4 * page_size + 16
     max_key_size = database.max_key_size()
     available_pages = floor(map_size / page_size)
-    available_size = int((available_pages * page_size) - max_key_size - 16)
-    assert calculate_stored_size(bytearray(available_size),
-                                 database) == map_size
+    available_size = int((available_pages * page_size) - max_key_size - 16) - fixed_cost
+    assert calculate_stored_size(bytearray(available_size + fixed_cost), database) == map_size
     return available_size
