@@ -23,6 +23,11 @@ def delete(key, database):
         return transaction.delete(key)
 
 
+def get(key, database):
+    with database.begin() as transaction:
+        return transaction.get(key)
+
+
 def calculate_stored_size(content, database):
     size = len(content)
     page_size = database.stat()["psize"]

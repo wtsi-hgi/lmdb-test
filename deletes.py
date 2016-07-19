@@ -1,7 +1,7 @@
 import shutil
 
 from _common import ONE_GB, ONE_MB, create_database, put, EXAMPLE_KEY, delete, \
-    calculate_largest_possible_entry
+    calculate_largest_possible_entry, get
 
 
 def run():
@@ -39,6 +39,7 @@ def run_with_map_size_and_proportion_of_capacity(map_size, proportion_of_capacit
         try:
             deleted = delete(EXAMPLE_KEY, database)
             assert deleted
+            assert get(EXAMPLE_KEY, database) is None
             print("Content deleted successfully (iteration %d/%d)" % (i + 1, iterations))
         except Exception as e:
             print("Exception deleting content on iteration %d: %s" % (i + 1, e))
