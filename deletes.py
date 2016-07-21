@@ -1,7 +1,7 @@
 import shutil
 
 from _common import ONE_GB, ONE_MB, create_database, put, EXAMPLE_KEY, delete, \
-    calculate_largest_possible_entry, get
+    calculate_largest_possible_entry, get, calculate_stored_size
 
 
 def run():
@@ -31,8 +31,8 @@ def run_with_map_size_and_proportion_of_capacity(map_size, proportion_of_capacit
     for i in range(iterations):
         try:
             put(EXAMPLE_KEY, content, database)
-            print("Put content of size equal to %d%% actual capacity in a database of %d bytes"
-                  % ((100 * proportion_of_capacity), map_size))
+            print("Put content of size equal to %d%% actual capacity (%d bytes) in a database of %d bytes"
+                  % ((100 * proportion_of_capacity), available_size, map_size))
         except Exception as e:
             print("Exception adding content on iteration %d: %s" % (i + 1, e))
             break
