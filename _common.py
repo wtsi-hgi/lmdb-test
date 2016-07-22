@@ -47,3 +47,21 @@ def calculate_usable_bytes(database, size):
     available_size = int((available_pages * page_size) - max_key_size - 16) - fixed_cost
     assert calculate_stored_size(bytearray(available_size + fixed_cost), database) <= size
     return available_size
+
+
+def add_files_with_total_size(number_of_files, total_size, database):
+    if number_of_files == 0:
+        return
+
+    used_size = 0
+    i = 0
+    while i < number_of_files - 1:
+        content = bytearray(1)
+        used_size += calculate_stored_size(content, database)
+        put("%s_%d" % (EXAMPLE_KEY, i), content, database)
+        i += 1
+    assert used_size < total_size
+
+    remaining_size = total_size - used_size
+    content = bytearray(calculate_usable_bytes(database, remaining_size))
+    put("%s_%d" % (EXAMPLE_KEY, i), content, database)

@@ -1,12 +1,11 @@
 import shutil
 from UserDict import UserDict
 from bisect import bisect_left
-from math import floor
 
 from lmdb.cpython import MapFullError
 
-from _common import calculate_largest_possible_entry, ONE_GB, put, EXAMPLE_KEY, \
-    delete, ONE_MB, get, calculate_stored_size, calculate_usable_bytes
+from _common import calculate_largest_possible_entry, ONE_GB, EXAMPLE_KEY, \
+    delete, ONE_MB, get, add_files_with_total_size
 from _common import create_database
 
 
@@ -84,24 +83,6 @@ def can_delete_entries(map_size, size_buffer, files_to_write_initially, files_to
     finally:
         database.close()
         shutil.rmtree(database_location)
-
-
-def add_files_with_total_size(number_of_files, total_size, database):
-    if number_of_files == 0:
-        return
-
-    used_size = 0
-    i = 0
-    while i < number_of_files - 1:
-        content = bytearray(1)
-        used_size += calculate_stored_size(content, database)
-        put("%s_%d" % (EXAMPLE_KEY, i), content, database)
-        i += 1
-    assert used_size < total_size
-
-    remaining_size = total_size - used_size
-    content = bytearray(calculate_usable_bytes(database, remaining_size))
-    put("%s_%d" % (EXAMPLE_KEY, i), content, database)
 
 
 if __name__ == "__main__":

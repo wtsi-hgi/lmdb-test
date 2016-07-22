@@ -1,5 +1,5 @@
-from capacity import run as capacity_run
-from deletes import run as deletes_run
+from test_capacity import run as capacity_run
+from test_deletes import run as deletes_run
 
 
 if __name__ == "__main__":
