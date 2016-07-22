@@ -6,7 +6,7 @@ from math import floor
 from lmdb.cpython import MapFullError
 
 from _common import calculate_largest_possible_entry, ONE_GB, put, EXAMPLE_KEY, \
-    delete, ONE_MB, get
+    delete, ONE_MB, get, calculate_stored_size, calculate_usable_bytes
 from _common import create_database
 
 
@@ -29,6 +29,10 @@ class _LazyCalculatedDict(UserDict):
         self.data[key] = value
 
 
+FILES_TO_WRITE_INITIALLY = 10
+FILES_TO_WRITE_AFTER_DELETE = 10
+
+
 def run():
     map_size = 8 * ONE_MB
     while map_size < 32 * ONE_GB:
@@ -40,7 +44,8 @@ def run_with_map_size(map_size):
     # Expressing problem as 2D landscape where we want to find the smallest size
     # buffer more than -1
     def buffer_size_mapper(size_buffer):
-        success, _ = can_delete_entries(map_size, size_buffer, 100)
+        success, _ = can_delete_entries(
+            map_size, size_buffer, FILES_TO_WRITE_INITIALLY, FILES_TO_WRITE_AFTER_DELETE)
         return size_buffer if success else -1
 
     landscape = _LazyCalculatedDict(buffer_size_mapper)
@@ -48,7 +53,7 @@ def run_with_map_size(map_size):
     # values
     max_buffer_size = int(map_size * 1.0)
     # Binary search the landscape
-    minimum_size_buffer = bisect_left(landscape, 1, hi=max_buffer_size) + 1
+    minimum_size_buffer = bisect_left(landscape, 1, hi=max_buffer_size) - 1
     assert minimum_size_buffer < max_buffer_size
     if minimum_size_buffer == max_buffer_size:
         raise RuntimeError("Max buffer size set to low for search")
@@ -60,34 +65,43 @@ def run_with_map_size(map_size):
           "%d bytes of actual capacity" % (minimum_size_buffer, map_size, available_size))
 
 
-def can_delete_entries(map_size, size_buffer, files_to_delete):
+def can_delete_entries(map_size, size_buffer, files_to_write_initially, files_to_write_after_delete):
     database, database_location = create_database(map_size)
     largest_entry_size = calculate_largest_possible_entry(database, map_size)
     available_size = largest_entry_size - size_buffer
     assert available_size > 0
 
-    file_size = int(floor(float(available_size) / files_to_delete))
-    assert file_size > 0
-    content = bytearray(file_size)
-    i = 0
-    while i < files_to_delete - 1:
-        put("%s_%d" % (EXAMPLE_KEY, i), content, database)
-        i += 1
-    remaining_size = available_size - (file_size * i)
-    put("%s_%d" % (EXAMPLE_KEY, i), bytes(remaining_size), database)
-
-    for i in range(files_to_delete):
+    add_files_with_total_size(files_to_write_initially, available_size, database)
+    for i in range(files_to_write_initially):
+        assert get("%s_%d" % (EXAMPLE_KEY, i), database) is not None
         delete("%s_%d" % (EXAMPLE_KEY, i), database)
         assert get("%s_%d" % (EXAMPLE_KEY, i), database) is None
-
     try:
-        put(EXAMPLE_KEY, bytearray(available_size), database)
+        add_files_with_total_size(files_to_write_after_delete, available_size, database)
         return True, largest_entry_size
     except MapFullError as e:
         return False, largest_entry_size
     finally:
         database.close()
         shutil.rmtree(database_location)
+
+
+def add_files_with_total_size(number_of_files, total_size, database):
+    if number_of_files == 0:
+        return
+
+    used_size = 0
+    i = 0
+    while i < number_of_files - 1:
+        content = bytearray(1)
+        used_size += calculate_stored_size(content, database)
+        put("%s_%d" % (EXAMPLE_KEY, i), content, database)
+        i += 1
+    assert used_size < total_size
+
+    remaining_size = total_size - used_size
+    content = bytearray(calculate_usable_bytes(database, remaining_size))
+    put("%s_%d" % (EXAMPLE_KEY, i), content, database)
 
 
 if __name__ == "__main__":
